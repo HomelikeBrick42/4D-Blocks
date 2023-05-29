@@ -1,0 +1,10 @@
+[package]
+name = "tesseracts"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+cgmath = "0.18.0"
+eframe = { version = "0.22.0", default-features = false, features = ["default_fonts", "wgpu"] }
+encase = { version = "0.6.1", features = ["cgmath"] }
+rand = "0.8.5"
