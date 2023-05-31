@@ -45,6 +45,7 @@ struct Ray {
 
 struct Hit {
     hit: bool,
+    block_index: u32,
     distance: f32,
     position: vec4<f32>,
     normal: vec4<f32>,
@@ -82,7 +83,7 @@ fn get_intersection(ray: Ray) -> Hit {
     while distance < camera.max_distance {
         // TODO: find out if this is causing a black line through the middle of the screen when looking exactly forward
         // for whatever reason, setting the initial value to 1 seems to stop the issue
-        var smallest_length = 1u;
+        var smallest_length = 0u;
         for (var i = 0u; i < 4u; i += 1u) {
             if step[i] != 0 && ray_lengths_per_axis[i] < ray_lengths_per_axis[smallest_length] {
                 smallest_length = i;
@@ -94,14 +95,15 @@ fn get_intersection(ray: Ray) -> Hit {
         ray_lengths_per_axis[smallest_length] += ray_step_size_per_unit_axis[smallest_length];
 
         if all(map_check >= vec4<i32>(0)) && all(map_check < vec4<i32>(CHUNK_SIZE)) {
-            let material = chunk[get_block_index(map_check)].material;
+            let index = get_block_index(map_check);
+            let material = chunk[index].material;
             if material != u32(-1) {
                 hit.hit = true;
+                hit.block_index = index;
                 hit.distance = distance;
                 hit.position = ray.origin + ray.direction * distance;
                 hit.normal = vec4<f32>(0.0);
-                hit.normal[smallest_length] = 1.0;
-                hit.normal = faceForward(hit.normal, hit.normal, hit.position - ray.origin);
+                hit.normal[smallest_length] = -f32(step[smallest_length]);
                 return hit;
             }
         }
@@ -113,7 +115,7 @@ fn get_intersection(ray: Ray) -> Hit {
 fn ray_trace(ray: Ray) -> vec3<f32> {
     let hit = get_intersection(ray);
     if hit.hit {
-        return hit.normal.xyz * 0.5 + 0.5;
+        return materials.data[chunk[hit.block_index].material].color;
     } else {
         return vec3<f32>(0.0);
     }

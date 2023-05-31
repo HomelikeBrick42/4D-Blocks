@@ -40,6 +40,7 @@ pub struct Chunk {
 
 pub struct App {
     last_time: std::time::Instant,
+    info_window: bool,
     main_texture: Texture<'static>,
     main_egui_texture_id: egui::TextureId,
     main_texture_bind_group_layout: wgpu::BindGroupLayout,
@@ -229,14 +230,15 @@ impl App {
 
         Self {
             last_time: std::time::Instant::now(),
+            info_window: false,
             main_texture,
             main_egui_texture_id,
             main_texture_bind_group_layout,
             main_texture_bind_group,
             camera: GpuCamera {
                 position: cgmath::vec4(0.0, 0.0, -3.0, 0.0),
-                forward: cgmath::vec4(0.0, 0.0, 1.0, 0.0),
-                right: cgmath::vec4(1.0, 0.0, 0.0, 0.0),
+                forward: cgmath::vec4(0.001, 0.0, 1.0, 0.0),
+                right: cgmath::vec4(1.0, 0.0, -0.001, 0.0),
                 up: cgmath::vec4(0.0, 1.0, 0.0, 0.0),
                 fov: 90.0,
                 max_distance: 100.0,
@@ -289,6 +291,22 @@ impl eframe::App for App {
                 }
             });
         }
+
+        egui::TopBottomPanel::top("Menu").show(ctx, |ui| {
+            ui.horizontal(|ui| {
+                self.info_window |= ui.button("Info").clicked();
+            });
+        });
+
+        egui::Window::new("Info")
+            .open(&mut self.info_window)
+            .default_size((150.0, 1.0))
+            .resizable(true)
+            .show(ctx, |ui| {
+                ui.label(format!("FPS: {:.3}", 1.0 / ts));
+                ui.label(format!("Frame Time: {:.3}ms", ts * 1000.0));
+                ui.allocate_space(ui.available_size());
+            });
 
         egui::CentralPanel::default()
             .frame(egui::Frame::none().fill(egui::Color32::from_rgb(255, 0, 255))) // color it pink, this should never be seen under normal circumstances
@@ -347,6 +365,13 @@ impl eframe::App for App {
                                     z: 0.0,
                                 },
                             },
+                            Material {
+                                color: cgmath::Vector3 {
+                                    x: 0.0,
+                                    y: 0.0,
+                                    z: 1.0,
+                                },
+                            },
                         ],
                     };
 
@@ -355,7 +380,7 @@ impl eframe::App for App {
                     };
                     chunk.data[0].material = 0;
                     chunk.data[2].material = 1;
-                    chunk.data[4].material = 1;
+                    chunk.data[4].material = 2;
 
                     let mut bind_group_invalidated = false;
 
